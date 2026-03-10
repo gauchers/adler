@@ -11,7 +11,7 @@
        <ul class="menu">
          <li><a href="../index.html">Retour à l'accueil</a></li>
          <li><a href="https://books.google.fr/books?id=DX5nAAAAcAAJ&printsec=frontcover&source=gbs_book_other_versions_r&redir_esc=y#v=onepage&q&f=false">Consulter l'imprimé</a></li>
-         <li><a href="./amaseo_o2.html">Romulo Amaseo II</a></li>
+         <li><a href="./amaseo_02.html">Romulo Amaseo II</a></li>
 
        </ul>
      </nav>
@@ -1841,141 +1841,37 @@
    
 <script>
 (function() {
-  /* ── Notice rétractable ─────────────────────────────── */
   document.addEventListener('DOMContentLoaded', function() {
+
+    /* ═══════════════════════════════════════════
+       1. NOTICE RÉTRACTABLE
+    ═══════════════════════════════════════════ */
     var notice = document.getElementById('notice');
     if (notice) {
-      // Récupérer le contenu intérieur
-      var originalContent = notice.innerHTML;
+      var originalHTML = notice.innerHTML;
+      notice.removeAttribute('style');
 
-      // Créer le bouton toggle
       var btn = document.createElement('button');
       btn.id = 'notice-toggle';
-      btn.innerHTML = '<span>Notice bibliographique</span><span class="toggle-icon">▾</span>';
+      btn.innerHTML = '<span>Notice bibliographique</span><span class="toggle-icon">&#9660;</span>';
 
-      // Wrapper le contenu
       var body = document.createElement('div');
       body.id = 'notice-body';
-      body.innerHTML = originalContent;
+      body.innerHTML = originalHTML;
 
       notice.innerHTML = '';
       notice.appendChild(btn);
       notice.appendChild(body);
 
-      // Supprimer les styles inline de notice
-      notice.removeAttribute('style');
-
       btn.addEventListener('click', function() {
-        var isOpen = body.classList.contains('visible');
-        body.classList.toggle('visible', !isOpen);
-        btn.classList.toggle('open', !isOpen);
+        var open = body.classList.toggle('visible');
+        btn.classList.toggle('open', open);
       });
     }
 
-    /* ── Pop-up de notes ────────────────────────────────── */
-    // Construire le dictionnaire des notes
-    var noteDivs = document.querySelectorAll('div.note');
-    var noteMap = {};
-    noteDivs.forEach(function(div) {
-      var anchor = div.querySelector('a[name]');
-      if (anchor) {
-        var key = anchor.getAttribute('name'); // ex: "n1"
-        var html = div.innerHTML
-          .replace(/<a name="[^"]*"[^>]*>.*?<\/a>/, '') // enlever l'ancre num
-          .trim();
-        noteMap[key] = html;
-      }
-    });
-
-    // Créer le pop-up unique
-    var popup = document.createElement('div');
-    popup.className = 'note-popup';
-    document.body.appendChild(popup);
-
-    var currentTarget = null;
-    var hideTimeout = null;
-
-    function showPopup(anchor, noteId) {
-      clearTimeout(hideTimeout);
-      var content = noteMap[noteId];
-      if (!content) return;
-
-      // Extraire le numéro
-      var numMatch = noteId.match(/\d+/);
-      var num = numMatch ? numMatch[0] : '';
-
-      popup.innerHTML = '<span class="note-num">Note ' + num + '</span>' + content;
-      popup.classList.add('visible');
-
-      // Positionnement
-      var rect = anchor.getBoundingClientRect();
-      var popW = 340;
-      var left = rect.left + window.scrollX;
-      var top  = rect.bottom + window.scrollY + 8;
-
-      // Éviter débordement à droite
-      if (left + popW > window.innerWidth - 16) {
-        left = window.innerWidth - popW - 16;
-      }
-      if (left < 8) left = 8;
-
-      popup.style.left = left + 'px';
-      popup.style.top  = top + 'px';
-    }
-
-    function hidePopup() {
-      hideTimeout = setTimeout(function() {
-        popup.classList.remove('visible');
-        currentTarget = null;
-      }, 180);
-    }
-
-    // Attacher les événements sur chaque appel de note
-    var noteAnchors = document.querySelectorAll('sup[data-type="note"] a');
-    noteAnchors.forEach(function(a) {
-      // L'ancre de renvoi pointe vers #nX, donc href="#n1" → "n1"
-      var href = a.getAttribute('href');
-      var noteId = href ? href.replace('#', '') : null;
-
-      a.addEventListener('mouseenter', function(e) {
-        if (noteId) {
-          currentTarget = a;
-          showPopup(a, noteId);
-        }
-        // Empêcher le scroll vers l'ancre
-        e.preventDefault();
-      });
-
-      a.addEventListener('mouseleave', hidePopup);
-
-      // Clic : empêcher le scroll, afficher/masquer
-      a.addEventListener('click', function(e) {
-        e.preventDefault();
-        if (popup.classList.contains('visible') && currentTarget === a) {
-          popup.classList.remove('visible');
-          currentTarget = null;
-        } else {
-          currentTarget = a;
-          showPopup(a, noteId);
-        }
-      });
-    });
-
-    // Maintenir le pop-up au survol
-    popup.addEventListener('mouseenter', function() {
-      clearTimeout(hideTimeout);
-    });
-    popup.addEventListener('mouseleave', hidePopup);
-
-    // Fermer si on clique ailleurs
-    document.addEventListener('click', function(e) {
-      if (!e.target.closest('sup[data-type="note"]') && !e.target.closest('.note-popup')) {
-        popup.classList.remove('visible');
-        currentTarget = null;
-      }
-    });
-
-    // Nettoyer les styles inline sur la table du texte
+    /* ═══════════════════════════════════════════
+       2. NETTOYER LES STYLES INLINE DU TABLEAU
+    ═══════════════════════════════════════════ */
     var texteDiv = document.getElementById('texte');
     if (texteDiv) {
       texteDiv.removeAttribute('style');
@@ -1985,6 +1881,121 @@
         td.removeAttribute('style');
       });
     }
+
+    /* ═══════════════════════════════════════════
+       3. POPUP NOTES — APPROCHE ROBUSTE
+    ═══════════════════════════════════════════ */
+
+    // 3a. Construire le dictionnaire id → texte complet de la note
+    var noteMap = {};
+    document.querySelectorAll('div.note').forEach(function(div) {
+      var anc = div.querySelector('a[name]');
+      if (!anc) return;
+      var id = anc.getAttribute('name'); // "n1", "n2", ...
+
+      // Cloner le div pour ne pas toucher le DOM original
+      var clone = div.cloneNode(true);
+      // Retirer l'ancre-numéro du clone
+      var ancClone = clone.querySelector('a[name]');
+      if (ancClone) ancClone.remove();
+
+      noteMap[id] = clone.innerHTML.trim();
+    });
+
+    // 3b. Créer le panneau popup (unique, réutilisé)
+    var panel = document.createElement('div');
+    panel.id = 'note-panel';
+    panel.innerHTML =
+      '<button id="note-panel-close" aria-label="Fermer">&#10005;</button>' +
+      '<div id="note-panel-num"></div>' +
+      '<div id="note-panel-body"></div>';
+    document.body.appendChild(panel);
+
+    var panelNum  = document.getElementById('note-panel-num');
+    var panelBody = document.getElementById('note-panel-body');
+    var panelClose = document.getElementById('note-panel-close');
+    var activeAnchor = null;
+
+    function openPanel(anchor, noteId) {
+      var content = noteMap[noteId];
+      if (content === undefined) {
+        console.warn('Note introuvable:', noteId);
+        return;
+      }
+      var num = noteId.replace('n', '');
+      panelNum.textContent  = 'Note ' + num;
+      panelBody.innerHTML   = content;
+
+      // Positionnement : juste sous l'appel de note, dans le flux de la page
+      var rect = anchor.getBoundingClientRect();
+      var scrollY = window.scrollY || window.pageYOffset;
+      var scrollX = window.scrollX || window.pageXOffset;
+
+      var panelW = 380;
+      var left = rect.left + scrollX;
+      var top  = rect.bottom + scrollY + 10;
+
+      // Éviter débordement droite
+      if (left + panelW > window.innerWidth + scrollX - 16) {
+        left = window.innerWidth + scrollX - panelW - 16;
+      }
+      if (left < scrollX + 8) left = scrollX + 8;
+
+      panel.style.left = left + 'px';
+      panel.style.top  = top  + 'px';
+      panel.classList.add('visible');
+      activeAnchor = anchor;
+
+      // Marquer l'appel actif
+      document.querySelectorAll('sup[data-type="note"] a.active-note')
+        .forEach(function(a) { a.classList.remove('active-note'); });
+      anchor.classList.add('active-note');
+    }
+
+    function closePanel() {
+      panel.classList.remove('visible');
+      if (activeAnchor) {
+        activeAnchor.classList.remove('active-note');
+        activeAnchor = null;
+      }
+    }
+
+    // 3c. Attacher les clics sur chaque appel de note
+    document.querySelectorAll('sup[data-type="note"] a').forEach(function(a) {
+      var href = a.getAttribute('href') || '';
+      var noteId = href.replace('#', ''); // "#n1" → "n1"
+
+      a.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (panel.classList.contains('visible') && activeAnchor === a) {
+          closePanel();
+        } else {
+          openPanel(a, noteId);
+        }
+      });
+    });
+
+    // Bouton fermer
+    panelClose.addEventListener('click', function(e) {
+      e.stopPropagation();
+      closePanel();
+    });
+
+    // Clic hors du panneau → fermer
+    document.addEventListener('click', function(e) {
+      if (panel.classList.contains('visible') &&
+          !panel.contains(e.target) &&
+          !e.target.closest('sup[data-type="note"]')) {
+        closePanel();
+      }
+    });
+
+    // Touche Échap
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') closePanel();
+    });
+
   });
 })();
 </script>
