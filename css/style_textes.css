@@ -305,45 +305,6 @@ sup[data-type="note"] a:hover {
   color: var(--ink);
 }
 
-/* ── Pop-up de note ─────────────────────────────────────────── */
-.note-popup {
-  position: fixed;
-  z-index: 500;
-  max-width: 340px;
-  min-width: 200px;
-  background: var(--ink);
-  color: var(--cream);
-  font-family: var(--font-body);
-  font-size: 0.88rem;
-  line-height: 1.65;
-  padding: 0.9rem 1.1rem 0.85rem;
-  border-radius: 3px;
-  border-left: 3px solid var(--gold);
-  box-shadow: 0 8px 28px rgba(0,0,0,0.35), 0 2px 6px rgba(0,0,0,0.2);
-  pointer-events: none;
-  opacity: 0;
-  transform: translateY(6px);
-  transition: opacity 0.18s ease, transform 0.18s ease;
-}
-
-.note-popup.visible {
-  opacity: 1;
-  transform: translateY(0);
-  pointer-events: auto;
-}
-
-.note-popup .note-num {
-  font-family: var(--font-title);
-  font-size: 0.68rem;
-  letter-spacing: 0.1em;
-  color: var(--gold);
-  display: block;
-  margin-bottom: 0.35rem;
-}
-
-.note-popup i { font-style: italic; color: rgba(245,240,232,0.75); }
-.note-popup a { color: var(--gold); text-decoration: underline; }
-
 /* ── Séparateur avant notes de bas ─────────────────────────── */
 #texte hr {
   border: none;
@@ -376,7 +337,7 @@ div.note {
   }
   #texte > table td:nth-child(3) { padding-top: 0.5rem !important; }
 
-  .note-popup { max-width: calc(100vw - 2rem); left: 1rem !important; }
+  
 
   #notice { margin: 1rem 0.5rem 1.5rem !important; }
 }
@@ -386,3 +347,55 @@ div.note {
 ::-webkit-scrollbar-track { background: var(--cream-dark); }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--gold); }
+
+/* ── Panneau note popup ─────────────────────────────────────── */
+#note-panel {
+  position: absolute;
+  z-index: 900;
+  width: 380px;
+  max-width: calc(100vw - 2rem);
+  background: #1a1612;
+  color: #f5f0e8;
+  font-family: 'EB Garamond', serif;
+  font-size: 0.95rem;
+  line-height: 1.65;
+  padding: 1rem 1.1rem 1rem 1.1rem;
+  border-radius: 3px;
+  border-left: 4px solid #b8944a;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.45), 0 3px 10px rgba(0,0,0,0.25);
+  display: none;
+}
+
+#note-panel.visible { display: block; }
+
+#note-panel-num {
+  font-family: 'Cormorant SC', serif;
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #b8944a;
+  margin-bottom: 0.5rem;
+}
+
+#note-panel-body { }
+#note-panel-body i { font-style: italic; color: rgba(245,240,232,0.75); }
+#note-panel-body a { color: #b8944a; text-decoration: underline; }
+
+#note-panel-close {
+  float: right;
+  background: none;
+  border: none;
+  color: rgba(245,240,232,0.45);
+  font-size: 0.9rem;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0 0 0.3rem 0.5rem;
+  transition: color 0.15s;
+}
+#note-panel-close:hover { color: #b8944a; }
+
+/* Appel de note actif */
+sup[data-type="note"] a.active-note {
+  background: #b8944a !important;
+  color: #1a1612 !important;
+}
